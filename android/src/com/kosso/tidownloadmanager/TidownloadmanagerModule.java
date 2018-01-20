@@ -33,7 +33,8 @@ import android.content.IntentFilter;
 import org.appcelerator.kroll.KrollFunction;
 import java.util.HashMap;
 import android.database.Cursor;
-
+import java.util.ArrayList;
+import java.io.File;
 
 
 @Kroll.module(name="Tidownloadmanager", id="com.kosso.tidownloadmanager")
@@ -93,6 +94,7 @@ public class TidownloadmanagerModule extends KrollModule
 								if (callbackProgress!=null){
 									HashMap<String,String> event = new HashMap<String, String>();
 									event.put("uid", _downloadId);
+									event.put("url", cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_URI)));
 									event.put("progress", TiConvert.toString(dlProgress));
 									event.put("bytes", TiConvert.toString(bytesDownloaded));
 									event.put("total", TiConvert.toString(bytesTotal));					
@@ -197,5 +199,42 @@ public class TidownloadmanagerModule extends KrollModule
 		callbackProgress = (KrollFunction) dict.get("progress");
 
 		startDownloadManager(dict);
-	}	
+	}
+
+	// Credit: https://github.com/m1ga/com.miga.downloadmanager @ v2.1.0 
+	@Kroll.method
+	public Object[] getDownloads() {
+		ArrayList<HashMap<String, Object>> downList = new ArrayList<HashMap<String, Object>>();
+		
+		DownloadManager.Query query = new DownloadManager.Query();
+		if (dMgr == null){
+			dMgr = (DownloadManager) appContext.getSystemService(appContext.DOWNLOAD_SERVICE);
+			return downList.toArray();
+		}
+
+		Cursor c = dMgr.query(query);
+		c.moveToFirst();
+		while (c.moveToNext()) {
+			HashMap<String, Object> dl = new HashMap<String, Object>();
+
+			String filename = null;
+			String downloadFileLocalUri = c.getString(c.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
+			if (downloadFileLocalUri != null) {
+				File mFile = new File(Uri.parse(downloadFileLocalUri).getPath());
+				filename = mFile.getAbsolutePath();
+			}
+
+			int bytes_downloaded = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR));
+			int bytes_total = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
+
+			dl.put("status",c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS)));
+			dl.put("filename", filename);
+			dl.put("size_total", bytes_total);
+			dl.put("size_downloaded", bytes_downloaded);
+
+			downList.add(dl);
+		}
+		c.close();
+		return downList.toArray();
+	}
 }

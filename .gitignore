@@ -1,4 +1,5 @@
 .DS_Store
 build.log
+android/build
 build
 /build
