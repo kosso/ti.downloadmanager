@@ -15,7 +15,7 @@ var tabGroup = Ti.UI.createTabGroup();
  * Add the two created tabs to the tabGroup object.
  */
 tabGroup.addTab(createTab("Home", "Go to the test tab", "assets/images/tab1.png"));
-tabGroup.addTab(createPlayerTab("Test", "Test", "assets/images/tab2.png"));
+tabGroup.addTab(createTestTab("Test", "Test", "assets/images/tab2.png"));
 
 /**
  * Open the tabGroup
@@ -56,89 +56,20 @@ function createTab(title, message, icon) {
 
 
 
-function createPlayerTab(title, message, icon) {
+function createTestTab(title, message, icon) {
     var win = Ti.UI.createWindow({
-        title: 'Audio Test',
+        title: 'Test',
         backgroundColor: '#fff',
         layout: 'vertical'
     });
 
-    var startStopButton = Ti.UI.createButton({
-        title: 'Start/Stop Streaming',
-        top: 10,
-        width: 200,
-        height: 40
-    });
-
-    var pauseResumeButton = Ti.UI.createButton({
-        title: 'Pause/Resume Streaming',
-        top: 10,
-        width: 200,
-        height: 40,
-        enabled: false
-    });
-
-    win.add(startStopButton);
-    win.add(pauseResumeButton);
-
-    // allowBackground: true on Android allows the
-    // player to keep playing when the app is in the
-    // background.
-    var audioPlayer = Ti.Media.createAudioPlayer({
-        url: 'http://stream.amazingradio.com:8000',
-        allowBackground: true
-    });
-
-    startStopButton.addEventListener('click',function() {
-        // When paused, playing returns false.
-        // If both are false, playback is stopped.
-        if (audioPlayer.playing || audioPlayer.paused) {
-            audioPlayer.stop();
-            pauseResumeButton.enabled = false;
-            if (Ti.Platform.name === 'android')
-            {
-                audioPlayer.release();
-            }
-        } else {
-            audioPlayer.start();
-            pauseResumeButton.enabled = true;
-        }
-    });
-
-    pauseResumeButton.addEventListener('click', function() {
-        if (audioPlayer.paused) {
-            audioPlayer.start();
-        } else {
-            audioPlayer.pause();
-        }
-    });
-
-    audioPlayer.addEventListener('progress', function(e) {
-        Ti.API.info('Time Played: ' + Math.round(e.progress) + ' milliseconds');
-    });
-
-    audioPlayer.addEventListener('change', function(e) {
-        Ti.API.info('State: ' + e.description + ' (' + e.state + ')');
-    });
-
-    win.addEventListener('close',function() {
-        audioPlayer.stop();
-        if (Ti.Platform.osname === 'android')
-        {
-            audioPlayer.release();
-        }
-    });
-
-
-
-
-
+    
     function requestPermissions(){
         var storagePermission = 'android.permission.READ_EXTERNAL_STORAGE';
         var wstoragePermission = 'android.permission.WRITE_EXTERNAL_STORAGE';
-
-        var hasStoragePerm = Ti.Android.hasPermission(storagePermission);
+        var silentstoragePermission = 'android.permission.DOWNLOAD_WITHOUT_NOTIFICATION';
         var permissionsToRequest = [];
+        var hasStoragePerm = Ti.Android.hasPermission(storagePermission);
         if (!hasStoragePerm) {
             permissionsToRequest.push(storagePermission);
         }
@@ -146,30 +77,34 @@ function createPlayerTab(title, message, icon) {
         if (!whasStoragePerm) {
             permissionsToRequest.push(wstoragePermission);
         }
-
+        var silenthasStoragePerm = Ti.Android.hasPermission(silentstoragePermission);
+        if (!silenthasStoragePerm) {
+            permissionsToRequest.push(silentstoragePermission);
+        }
         if (permissionsToRequest.length > 0) {
             Ti.Android.requestPermissions(permissionsToRequest, function(e) {
                 if (e.success) {
-                    
                    console.log('SUCCESS!', e);
-     
+                   callback(true);
+                   return;
                 } else {
-
                     console.log('ERROR: ' + e.error);
-                    console.log('No permission for external storage.');
-
+                    callback(false);
+                    return;
                 }
             });
         }
-        if(hasStoragePerm && whasStoragePerm){
-            console.log('permissions already granted');
+        if(hasStoragePerm && whasStoragePerm && silenthasStoragePerm){
+            console.log('PERMISSION ALREADY GRANTED');
+            callback(true);
+            return;
         }
 
     }
 
 
     var btnPerms = Ti.UI.createButton({
-        title: 'check perms.',
+        title: 'check permissions',
         top: 10,
         width: 200,
         height: 40,
@@ -194,7 +129,7 @@ function createPlayerTab(title, message, icon) {
     ];
 
     var btnDownload = Ti.UI.createButton({
-        title: 'test downloads',
+        title: 'start downloads',
         top: 10,
         width: 200,
         height: 40,
@@ -282,8 +217,6 @@ function createPlayerTab(title, message, icon) {
         
 
     }
-
-
 
     var tab = Ti.UI.createTab({
         title: title,
