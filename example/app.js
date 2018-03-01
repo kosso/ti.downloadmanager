@@ -63,7 +63,10 @@ function createTestTab(title, message, icon) {
         layout: 'vertical'
     });
 
-    
+
+
+    // NB : Andrdoid: You must declare these in tiapp.xml     
+
     function requestPermissions(){
         var storagePermission = 'android.permission.READ_EXTERNAL_STORAGE';
         var wstoragePermission = 'android.permission.WRITE_EXTERNAL_STORAGE';
@@ -103,23 +106,25 @@ function createTestTab(title, message, icon) {
     }
 
 
-    var btnPerms = Ti.UI.createButton({
-        title: 'check permissions',
-        top: 10,
-        width: 200,
-        height: 40,
-        enabled: false
-    });
+    if(Ti.Platform.osname == 'android'){
 
-    btnPerms.addEventListener('click', function() {
+        var btnPerms = Ti.UI.createButton({
+            title: 'check permissions',
+            top: 10,
+            width: 200,
+            height: 40,
+            enabled: false
+        });
 
-        console.log('requestPermissions... ');
-        requestPermissions();
+        btnPerms.addEventListener('click', function() {
 
-    });
+            console.log('requestPermissions... ');
+            requestPermissions();
 
-    win.add(btnPerms);
+        });
+        win.add(btnPerms);
 
+    }
 
     var urls = [
         'http://qrdio.com/_intest/test.m4a',
@@ -202,16 +207,14 @@ function createTestTab(title, message, icon) {
         }
         _file = null;
 
-        console.log('startDownload... ');
+        console.log('call downloadFile in module ... ');
 
-        dlmod.startDownload({
+        dlmod.downloadFile({
             url: url,
             filename: file,
             success: onDone,
             error: onError,
-            progress: onProgress,
-            title: 'Download',
-            description: 'Download ' + filename
+            progress: onProgress
         });
 
         
