@@ -1,7 +1,7 @@
 //
 //  TWRDownloadManager.h
 //  DownloadManager
-// 
+//
 //  Created by Michelangelo Chasseur on 25/07/14.
 //  Copyright (c) 2014 Touchware. All rights reserved.
 //
@@ -124,3 +124,4 @@
 
 
 @end
+

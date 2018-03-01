@@ -42,3 +42,4 @@ typedef void(^TWRDownloadCompletionBlock)(int uid, NSString* url, NSString* file
                      completionBlock:(TWRDownloadCompletionBlock)completionBlock;
 
 @end
+

@@ -36,6 +36,37 @@
     [[TWRDownloadManager sharedManager] cleanTmpDirectory];
 }
 
+-(void)shutdown:(id)sender
+{
+    // this method is called when the module is being unloaded
+    // typically this is during shutdown. make sure you don't do too
+    // much processing here or the app will be quit forceably
+    
+    // you *must* call the superclass
+    [super shutdown:sender];
+}
+
+#pragma mark Listener Notifications
+
+-(void)_listenerAdded:(NSString *)type count:(int)count
+{
+    if (count == 1 && [type isEqualToString:@"my_event"])
+    {
+        // the first (of potentially many) listener is being added
+        // for event named 'my_event'
+    }
+}
+
+-(void)_listenerRemoved:(NSString *)type count:(int)count
+{
+    if (count == 0 && [type isEqualToString:@"my_event"])
+    {
+        // the last listener called for event named 'my_event' has
+        // been removed, we can optionally clean up any resources
+        // since no body is listening at this point for that event
+    }
+}
+
 - (BOOL)addSkipBackupAttributeToItemAtPath:(NSString *) filePathString
 {
     NSURL* URL= [NSURL fileURLWithPath: filePathString];
@@ -53,38 +84,45 @@
 - (void)downloadFile:(id)args
 {
     ENSURE_SINGLE_ARG(args,NSDictionary);
+    
     if( [args objectForKey:@"url"]==nil || [args objectForKey:@"filename"] == nil || [args objectForKey:@"path"] == nil){
         NSLog(@"[ERROR] missing parameters");
         return;
     }
     
     NSFileManager *fileManager = [[NSFileManager alloc] init];
+    
     NSString *FILE_URL = [TiUtils stringValue:[args objectForKey:@"url"]];
     NSString *FILE_NAME = [TiUtils stringValue:[args objectForKey:@"filename"]];
     NSString *DESTINATION_PATH = [TiUtils stringValue:[args objectForKey:@"path"]];
     
-    // NSLog(@"[INFO] downloadFile:  %@", FILE_URL);
+    NSLog(@"[DEBUG] downloadFileForURL:  %@", FILE_URL);
     
     if([FILE_URL isEqualToString:@""]){
-        NSLog(@"[ERROR] NO URL:  %@", FILE_URL);
-        // meh..
+        NSLog(@"[DEBUG] NO URL:  %@", FILE_URL);
         return;
     }
+    
+    // Checks for file in device app Caches directory.
     if ([[TWRDownloadManager sharedManager] fileExistsForUrl:FILE_URL]) {
-        // NSLog(@"[INFO] file exists for url:  %@  .. remove it.. ", FILE_URL);
+        NSLog(@"[DEBUG] file exists for url:  %@  .. remove it.. ", FILE_URL);
         [[TWRDownloadManager sharedManager] deleteFileForUrl:FILE_URL];
+        // Will this ever be partial? If so, return a success event.
     }
     
     if ([fileManager fileExistsAtPath:DESTINATION_PATH]){
-        // NSLog(@"[INFO] file exists at path provided url:  %@  .. delete ", DESTINATION_PATH);
+        NSLog(@"[DEBUG] file exists at path provided url:  %@  .. delete ", DESTINATION_PATH);
+        
         NSError *error = nil;
         [fileManager removeItemAtPath:DESTINATION_PATH error:&error];
         
     }
-    // Increment a uid for this session - for Android parity
+    
+    // Increment a 'uid' for this sesssion.
     uid++;
     // NSLog(@"[INFO] START a download with UID :  %d", uid);
-    // Initiate the download
+    
+    // STARTS THE DOWNLOAD ...
     [[TWRDownloadManager sharedManager] downloadFileForURL:FILE_URL withUID:uid withName:FILE_NAME
                                              progressBlock:^(int uid, NSString * url, CGFloat progress, int bytesWritten, int totalBytes) {
                                                  // NSLog(@"[INFO] progress %.2f : %@", progress, url);
@@ -107,7 +145,7 @@
                                                  // Not used. No parity available on Android yet.
                                                  // NSLog(@"[INFO] ETA: %lu sec. %@", (unsigned long)seconds, FILE_URL);
                                              } completionBlock:^(int uid, NSString *url, NSString *filename) {
-                                                 // NSLog(@"[INFO] Download completed : %@  %@", filename, url);
+                                                 NSLog(@"[DEBUG] >> Download completed! : %@  %@", filename, url);
                                                  NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
                                                  NSString *cachesDirectory = [paths objectAtIndex:0];
                                                  NSString *targetPath = [cachesDirectory stringByAppendingPathComponent:(NSString *)filename];
@@ -132,12 +170,12 @@
                                                                                 @"success", @"type",nil];
                                                          [self fireEvent:@"success" withObject:event];
                                                          
-                                                         // NSLog(@"[INFO] >> remaining currentDownloads count: %d", [[TWRDownloadManager sharedManager] currentDownloads].count);
+                                                         NSLog(@"[DEBUG] >> remaining currentDownloads count: %d", [[TWRDownloadManager sharedManager] currentDownloads].count);
                                                          
                                                      }
                                                  } else {
-                                                     // NSLog(@"[ERROR] File NOT moved to : %@", DESTINATION_PATH);
-                                                     // NSLog(@"[ERROR] from : %@", targetPath);
+                                                     // NSLog(@"[INFO] File NOT moved to : %@", DESTINATION_PATH);
+                                                     // NSLog(@"[INFO] from : %@", targetPath);
                                                      if([self _hasListeners:@"error"]){
                                                          NSDictionary *event = [[NSDictionary alloc] initWithObjectsAndKeys:
                                                                                 NUMINT(uid), @"uid",
@@ -151,7 +189,8 @@
                                                      }
                                                  }
                                              } errorBlock:^(int uid, NSString * url) {
-                                                 NSLog(@"[ERROR] Download error for url : %@", url);
+                                                 NSLog(@"[DEBUG] Download error for url : %@", url);
+                                                 // Send error event if listener added
                                                  if([self _hasListeners:@"error"]){
                                                      NSDictionary *event = [[NSDictionary alloc] initWithObjectsAndKeys:
                                                                             NUMINT(uid), @"uid",
@@ -177,20 +216,21 @@
 - (void)cancelDownloadForUID:(id)args
 {
     int DOWNLOAD_UID = [TiUtils intValue:[args objectAtIndex:0]];
-    // NSLog(@"[INFO] cancelDownloadForUID:  %d", DOWNLOAD_UID);
+    NSLog(@"[DEBUG] cancelDownloadForUID:  %d", DOWNLOAD_UID);
     [[TWRDownloadManager sharedManager] cancelDownloadForUID:DOWNLOAD_UID];
 }
 
 - (void)cancelDownloadForUrl:(id)args
 {
     NSString *DOWNLOAD_URL = [TiUtils stringValue:[args objectAtIndex:0]];
-    // NSLog(@"[INFO] cancelDownloadForUrl:  %@", DOWNLOAD_URL);
+    NSLog(@"[DEBUG] cancelDownloadForUrl:  %@", DOWNLOAD_URL);
     [[TWRDownloadManager sharedManager] cancelDownloadForUrl:DOWNLOAD_URL];
 }
 
 - (void)cancelAllDownloads:(id)unused
 {
-    // NSLog(@"[INFO] cancelAllDownloads");
+    NSLog(@"[DEBUG] cancelAllDownloads");
     [[TWRDownloadManager sharedManager] cancelAllDownloads];
 }
+
 @end
