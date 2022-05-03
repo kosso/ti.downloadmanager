@@ -95,17 +95,17 @@ public class TidownloadmanagerModule extends KrollModule {
     }
 
     public void startProgress(final long dId) {
-        // Log.d( LCAT, "startProgress for download queue ID:" + TiConvert.toString(dId));
+        //Log.d( LCAT, "startProgress for download queue ID:" + TiConvert.toString(dId));
         executorService = Executors.newSingleThreadExecutor();
         Runnable thisRunnable = new Runnable() {
             @Override
             public void run() {
                 try {
                     if (Thread.currentThread().isInterrupted()) {
-                        // Log.d(LCAT, "Thread was interrupted for ID: "+TiConvert.toString(dId));
+                        //Log.d(LCAT, "Thread was interrupted for ID: "+TiConvert.toString(dId));
                         throw new InterruptedException();
                     }
-                    // Log.d(LCAT, "running for " + TiConvert.toString(dId));
+                    //Log.d(LCAT, "running for " + TiConvert.toString(dId));
                     DownloadManager.Query q = new DownloadManager.Query();
                     q.setFilterById(dId);
                     boolean downloading = true;
@@ -241,9 +241,9 @@ public class TidownloadmanagerModule extends KrollModule {
         if (service == null) {
             registerReceiver();
         }
-        Log.d(LCAT, "downloadFile:");
-        Log.d(LCAT, "Source url  : " + TiConvert.toString(dict, "url"));
-        Log.d(LCAT, "Download to : " + TiConvert.toString(dict, "path"));
+        //Log.d(LCAT, "downloadFile:");
+        //Log.d(LCAT, "Source url  : " + TiConvert.toString(dict, "url"));
+        //Log.d(LCAT, "Download to : " + TiConvert.toString(dict, "path"));
 
         // iOS specifies filename too
         if (dMgr == null) {

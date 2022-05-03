@@ -1,5 +1,6 @@
 package com.kosso.tidownloadmanager;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -11,7 +12,7 @@ import org.appcelerator.kroll.common.Log;
 import org.appcelerator.titanium.util.TiConvert;
 import android.webkit.URLUtil;
 
-
+@SuppressLint("Range")
 public class ServiceReceiver extends BroadcastReceiver {
 	
 	TidownloadmanagerModule _module = null;
@@ -30,7 +31,7 @@ public class ServiceReceiver extends BroadcastReceiver {
 
 			DownloadManager downloadManager = (DownloadManager)ctxt.getSystemService(Context.DOWNLOAD_SERVICE);
 			long downloadId = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, 0);
-			// Log.d(LCAT, "downloadId was: " + TiConvert.toString(downloadId));
+			//Log.d(LCAT, "downloadId was: " + TiConvert.toString(downloadId));
 			DownloadManager.Query query = new DownloadManager.Query();
 			query.setFilterById(downloadId);
 			Cursor c = downloadManager.query(query);
